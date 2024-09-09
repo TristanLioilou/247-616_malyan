@@ -38,8 +38,11 @@
 //pas de definitions publiques
 
 //Fonctions publiques:
-int main(int argc,char** argv);
-
+void activerPompe(void);
+void desactiverPompe(void);
+void deplacerBras(int x, int y, int z);
+int attendreFinMouvement(void);
+void afficherPosition(void);
 //Variables publiques:
 //pas de variables publiques
 
