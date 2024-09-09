@@ -32,6 +32,9 @@ int interfaceMalyan_recoitUneReponse(char *Reponse, unsigned char LongueurMaxima
 int interfaceMalyan_demarreLaPompeDuUARM(void);
 int interfaceMalyan_arreteLaPompeDuUARM(void);
 
+int interfaceMalyan_donneLaPosition(void) ;
+int interfaceMalyan_vaALaPosition(int x, int y, int z) ;
+int interfaceMalyan_retourneALaMaison(void) ;
 
 //Variables publiques:
 //pas de variables publiques
