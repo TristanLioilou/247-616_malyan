@@ -9,67 +9,56 @@
 #include "interfaceDistance.h"
 #include "main.h"
 
-// Prototypes des fonctions
+// Définir les macros nécessaires
+#define MAX_TENTATIVES 100  // Nombre maximal de tentatives
 
-
-int FonctionDistance(void) {
-    int fdPortI2C;  // file descriptor I2C
-
-    // Initialisation du port I2C
-    fdPortI2C = open(I2C_FICHIER, O_RDWR);
+// Fonction principale pour lire la distance
+float FonctionDistance(void) {
+    int fdPortI2C = open(I2C_FICHIER, O_RDWR);
     if (fdPortI2C == -1) {
         printf("Erreur: I2C initialisation step 1 - %s\n", strerror(errno));
-        return -1;
+        return -1;  // Retourner une valeur d'erreur
     }
+
+    // Sélectionner le périphérique I2C
     if (ioctl(fdPortI2C, I2C_SLAVE_FORCE, I2C_ADRESSE) < 0) {
         printf("Erreur: I2C initialisation step 2 - %s\n", strerror(errno));
         close(fdPortI2C);
-        return -1;
+        return -1;  // Retourner une valeur d'erreur
     }
 
     // Configurer le capteur
     if (interfaceVL6180x_configure(fdPortI2C) < 0) {
         close(fdPortI2C);
-        return -1;
+        return -1;  // Retourner une valeur d'erreur
     }
 
-    // Boucle pour lire la distance quand elle est prête
-    //while (1) {
-        uint8_t valeur;
-
-        // Démarrer la mesure de distance
-        if (interfaceVL6180x_ecrit(fdPortI2C, 0x18, 0x01) < 0) {
-            printf("Erreur: interfaceVL6180x_litDistance (début) - %s\n", strerror(errno));
-            usleep(1000000); // Attendre avant de réessayer
-           // continue; // Continue à essayer
+    // Essayer de lire la distance jusqu'à ce que cela réussisse
+    float distance = -1;
+    int tentative = 0;
+    while (distance < 0 && tentative < MAX_TENTATIVES) {
+        distance = lireDistanceCapteur(fdPortI2C);  // Lire la distance
+        if (distance < 0) {
+            printf("Tentative %d échouée. Nouvelle tentative...\n", tentative + 1);
+            tentative++;
+            usleep(500000);  // Attendre 500ms avant de réessayer
         }
+    }
 
-        // Attendre que la mesure soit prête
-        do {
-            if (interfaceVL6180x_lit(fdPortI2C, 0x4F, &valeur) < 0) {
-                printf("Erreur: interfaceVL6180x_litDistance (vérification) - %s\n", strerror(errno));
-                usleep(1000000); // Attendre avant de réessayer
-                break; // Quitte le do-while pour essayer à nouveau
-            }
-            usleep(100000); // 100 ms
-        } while ((valeur & 0x07) != 0x04); // Vérifie le bit de statut
+    // Vérifier si la lecture a réussi après les tentatives
+    if (distance < 0) {
+        printf("Erreur: Lecture de la distance échouée après %d tentatives.\n", MAX_TENTATIVES);
+        close(fdPortI2C);
+        return -1;  // Retourner une valeur d'erreur si toutes les tentatives échouent
+    }
 
-        // Lire la distance
-        float distance;
-        if (interfaceVL6180x_litDistance(fdPortI2C, &distance) < 0) {
-            printf("Erreur: interfaceVL6180x_litDistance (lecture) - %s\n", strerror(errno));
-            usleep(1000000); // Attendre avant de réessayer
-           // continue; // Continue à essayer
-        }
-
-        printf("Distance lue: %.2f cm\n", distance);
-        //DistanceLue = distance;
-    //}
-
-    close(fdPortI2C); // Fermeture du 'file descriptor'
-    return 0;
+    // Fermer le descripteur I2C
+    close(fdPortI2C);
+    
+    return distance;  // Retourner la distance lue
 }
 
+// Fonction pour écrire dans le capteur VL6180x
 int interfaceVL6180x_ecrit(int fd, uint16_t Registre, uint8_t Donnee) {
     uint8_t message[3];
     message[0] = (uint8_t)(Registre >> 8);
@@ -83,6 +72,7 @@ int interfaceVL6180x_ecrit(int fd, uint16_t Registre, uint8_t Donnee) {
     return 0;
 }
 
+// Fonction pour lire une valeur du capteur VL6180x
 int interfaceVL6180x_lit(int fd, uint16_t Registre, uint8_t *Donnee) {
     uint8_t Commande[2];
     Commande[0] = (uint8_t)(Registre >> 8);
@@ -100,8 +90,8 @@ int interfaceVL6180x_lit(int fd, uint16_t Registre, uint8_t *Donnee) {
     return 0;
 }
 
+// Fonction pour configurer le capteur VL6180x
 int interfaceVL6180x_configure(int fd) {
-    // Écrit les réglages de configuration (Tuning Settings)
     uint16_t reg_settings[][2] = {
         {0x0207, 0x01}, {0x0208, 0x01}, {0x0096, 0x00}, {0x0097, 0xfd},
         {0x00e3, 0x00}, {0x00e4, 0x04}, {0x00e5, 0x02}, {0x00e6, 0x01},
@@ -123,6 +113,7 @@ int interfaceVL6180x_configure(int fd) {
     return 0;
 }
 
+// Fonction pour lire la distance à partir du capteur
 int interfaceVL6180x_litDistance(int fd, float *Distance) {
     uint8_t valeur;
 
@@ -134,4 +125,34 @@ int interfaceVL6180x_litDistance(int fd, float *Distance) {
 
     *Distance = (float)valeur / 10.0; // Conversion en cm
     return 0;
+}
+
+// Fonction pour lire la distance avec le capteur VL6180x
+float lireDistanceCapteur(int fd) {
+    uint8_t valeur;
+    float distance = -1;
+
+    // Démarrer la mesure de distance
+    if (interfaceVL6180x_ecrit(fd, 0x18, 0x01) < 0) {
+        printf("Erreur: Demande de mesure de distance échouée.\n");
+        return -1;
+    }
+
+    // Attendre que la mesure soit prête
+    do {
+        if (interfaceVL6180x_lit(fd, 0x4F, &valeur) < 0) {
+            printf("Erreur: Lecture de l'état de mesure échouée.\n");
+            usleep(1000000);  // Attendre un peu avant de réessayer
+            return -1;
+        }
+        usleep(100000);  // Attendre 100 ms pour vérifier l'état
+    } while ((valeur & 0x07) != 0x04);  // Vérifier que le bit de statut indique que la mesure est prête
+
+    // Lire la distance
+    if (interfaceVL6180x_litDistance(fd, &distance) < 0) {
+        printf("Erreur: Lecture de la distance échouée.\n");
+        return -1;
+    }
+
+    return distance;  // La distance lue en cm
 }

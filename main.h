@@ -36,13 +36,23 @@
 //INFORMATION PUBLIQUE:
 //Definitions publiques:
 //pas de definitions publiques
-
+extern const char *devices[];
 //Fonctions publiques:
+void TogglePump(void);
+float calculerDistanceEuclidienne(int x1, int y1, int x2, int y2);
+float FonctionDistance(void);  // Déclaration de la fonction FonctionDistance
+float lireDistanceCapteur(int fd);  // Déclaration de la fonction lireDistanceCapteur
+int main(void);
 void activerPompe(void);
 void desactiverPompe(void);
 void deplacerBras(int x, int y, int z);
 int attendreFinMouvement(void);
 void afficherPosition(void);
+int trouverEtPrendreBloc(int fd);
+void deplacerBrasEtAttendre(int x, int y, int z);
+char getCh(void);
+int attendrePositionEtScan(int x, int y, int z, int fd);
+void Lit_Balance(void);
 //Variables publiques:
 //pas de variables publiques
 

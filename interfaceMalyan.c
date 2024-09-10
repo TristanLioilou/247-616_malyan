@@ -1,7 +1,7 @@
 #include "main.h"
 #include "piloteSerieUSB.h"
 #include "interfaceMalyan.h"
-#include <string.h>
+
 
 #define INTERFACEMALYAN_LONGUEUR_MAXIMALE_DES_COMMANDES 64
 #define INTERFACEMALYAN_LONGUEUR_MAXIMALE_DES_REPONSES 64
@@ -9,7 +9,6 @@
 // Déclarations de fonctions privées
 
 
-// Variables privées
 unsigned char interfaceMalyan_commande[INTERFACEMALYAN_LONGUEUR_MAXIMALE_DES_COMMANDES];
 unsigned char interfaceMalyan_reponse[INTERFACEMALYAN_LONGUEUR_MAXIMALE_DES_REPONSES];
 
@@ -52,4 +51,16 @@ int interfaceMalyan_donneLaPosition(void)
 int interfaceMalyan_litLaPosition(char *Reponse, unsigned char LongueurMaximale)
 {
     return piloteSerieUSB_lit(Reponse, LongueurMaximale);
+}
+
+int interfaceMalyan_verifieMouvement(char *Reponse, unsigned char LongueurMaximale)
+{
+    // Envoyer la commande M2200 pour vérifier si le bras est en mouvement
+    if (interfaceMalyan_ecritUneCommande("M2200\n", 6) < 0)
+    {
+        return -1;  // Erreur lors de l'envoi de la commande
+    }
+
+    // Lire la réponse
+    return interfaceMalyan_recoitUneReponse(Reponse, LongueurMaximale);
 }
