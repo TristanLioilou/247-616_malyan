@@ -52,7 +52,7 @@ int trouverEtPrendreBloc(int fd);
 void deplacerBrasEtAttendre(int x, int y, int z);
 char getCh(void);
 int attendrePositionEtScan(int x, int y, int z, int fd);
-void Lit_Balance(void);
+char* Lit_Balance(void);
 //Variables publiques:
 //pas de variables publiques
 
