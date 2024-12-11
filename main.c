@@ -387,7 +387,7 @@ int main()
             close(Pipe_Bras_read_Balance[0]); // Le fils ne lit pas depuis ce pipe
             close(Pipe_CAN_read_Balance[0]);  // Le fils ne lit pas depuis ce pipe
 
-             char test_command[] = "Z<cr><If>"; // Commande de tare
+            char test_command[] = "Z<cr><If>"; // Commande de tare
             static char Lecture[255];
             static char Value[255] = "00.00"; // Tableau static pour stocker la valeur lue
             int port_index_balance;
